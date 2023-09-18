@@ -93,10 +93,11 @@ func (g *goption[T]) FlatMap(fn func(T)) Goptional[T] {
 	if g.wrapped {
 		v = g.unwrapVal()
 	} else if g.present {
-		v = *g.ptr
+		x := *g.ptr
+		v = x.(T)
 	}
 
-	if v != nil {
+	if any(v) != nil {
 		fn(v)
 	}
 
@@ -130,15 +131,17 @@ func (g *goption[T]) FlatMapElse(fn func(T), el func() T) Goptional[T] {
 	if g.wrapped {
 		v = g.unwrapVal()
 	} else if g.present {
-		v = *g.ptr
+		x := *g.ptr
+		v = x.(T)
 	} else {
 		t := any(el())
 		g.ptr = &t
 		g.present = true
-		v = *g.ptr
+		x := *g.ptr
+		v = x.(T)
 	}
 
-	if v != nil {
+	if any(v) != nil {
 		fn(v)
 	}
 
