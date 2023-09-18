@@ -1,6 +1,7 @@
 package goptional
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,8 +10,20 @@ func transform(val *testType) {
 	val.Greeting = "hello"
 }
 
+func fail(val *testType) {
+	val.fail = true
+}
+
+func checkFailure(val *testType) error {
+	if val.fail {
+		return errors.New("failed successfully")
+	}
+	return nil
+}
+
 type testType struct {
 	Greeting string `json:"greeting"`
+	fail     bool
 }
 
 func TestNewGoptionalPointer(t *testing.T) {
@@ -24,27 +37,27 @@ func TestNewGoptionalPointer(t *testing.T) {
 	assert.NotNil(t, opt)
 }
 
-func TestExists(t *testing.T) {
+func TestMap(t *testing.T) {
 	// Arrange
 	tt := testType{}
 
 	opt := NewGoptional(&tt)
 
 	// Act
-	opt.Exists(transform)
+	opt.Map(transform)
 
 	// Assert
 	assert.Equal(t, "hello", tt.Greeting)
 }
 
-func TestExistsElseExists(t *testing.T) {
+func TestMapElseExists(t *testing.T) {
 	// Arrange
 	tt := testType{}
 
 	opt := NewGoptional(&tt)
 
 	// Act
-	opt.ExistsElse(transform, func() *testType {
+	opt.MapElse(transform, func() *testType {
 		return &testType{}
 	})
 
@@ -52,17 +65,44 @@ func TestExistsElseExists(t *testing.T) {
 	assert.Equal(t, "hello", tt.Greeting)
 }
 
-func TestExistsElseDoesntExists(t *testing.T) {
+func TestMapElseDoesntExists(t *testing.T) {
 	// Arrange
 	opt := NewGoptional[*testType](nil)
 
 	// Act
-	opt.ExistsElse(transform, func() *testType {
+	opt.MapElse(transform, func() *testType {
 		return &testType{}
 	})
 
 	// Assert
 	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+}
+
+func TestExistsDoesExist(t *testing.T) {
+	// Arrange
+	tt := testType{}
+
+	opt := NewGoptional(&tt)
+
+	// Act
+	err := opt.Exists(checkFailure)
+
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestExistsDoesntExist(t *testing.T) {
+	// Arrange
+	tt := testType{}
+
+	opt := NewGoptional(&tt)
+
+	// Act
+	err := opt.Map(fail).Exists(checkFailure)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, "failed successfully", err.Error())
 }
 
 func TestVal(t *testing.T) {
@@ -122,7 +162,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	opt := NewGoptional(&tt)
 
-	opt.Exists(transform)
+	opt.Map(transform)
 
 	// Act
 	jsonBytes, err := opt.MarshalJSON()
@@ -144,35 +184,34 @@ func TestMarshalJSONDoesntExist(t *testing.T) {
 	assert.Nil(t, jsonBytes)
 }
 
-//
-//func TestUnmarshalJSON(t *testing.T) {
-//	// Arrange
-//	tt := testType{}
-//
-//	opt := NewGoptional(&tt)
-//
-//	jsonString := "{\"greeting\":\"hello\"}"
-//
-//	// Act
-//	err := opt.UnmarshalJSON([]byte(jsonString))
-//
-//	// Assert
-//	assert.NoError(t, err)
-//	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
-//}
-//
-//func TestUnmarshalJSONDoesntExist(t *testing.T) {
-//	// Arrange
-//	opt := NewGoptional[*testType](nil)
-//
-//	jsonString := "{\"greeting\":\"hello\"}"
-//
-//	// Act
-//	err := opt.UnmarshalJSON([]byte(jsonString))
-//
-//	// Assert
-//	assert.NoError(t, err)
-//}
+func TestUnmarshalJSON(t *testing.T) {
+	// Arrange
+	tt := testType{}
+
+	opt := NewGoptional(&tt)
+
+	jsonString := "{\"greeting\":\"hello\"}"
+
+	// Act
+	err := opt.UnmarshalJSON([]byte(jsonString))
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+}
+
+func TestUnmarshalJSONDoesntExist(t *testing.T) {
+	// Arrange
+	opt := NewGoptional[*testType](nil)
+
+	jsonString := "{\"greeting\":\"hello\"}"
+
+	// Act
+	err := opt.UnmarshalJSON([]byte(jsonString))
+
+	// Assert
+	assert.NoError(t, err)
+}
 
 func TestWrap(t *testing.T) {
 	// Arrange
@@ -193,7 +232,7 @@ func TestUnwrap(t *testing.T) {
 
 	opt := NewGoptional(&tt)
 
-	opt.Exists(transform)
+	opt.Map(transform)
 
 	opt2 := Wrap(opt)
 
@@ -210,7 +249,7 @@ func TestDeeplyWrappedUnwrap(t *testing.T) {
 
 	opt := NewGoptional(&tt)
 
-	opt.Exists(transform)
+	opt.Map(transform)
 
 	opt2 := Wrap(opt)
 
@@ -221,4 +260,22 @@ func TestDeeplyWrappedUnwrap(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, "hello", innerOpt.Greeting)
+}
+
+func TestUnmarshalJSONUnwrap(t *testing.T) {
+	// Arrange
+	tt := testType{}
+
+	opt := NewGoptional(&tt)
+
+	opt = Wrap(opt)
+
+	jsonString := "{\"greeting\":\"hello\"}"
+
+	// Act
+	err := opt.UnmarshalJSON([]byte(jsonString))
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
 }
