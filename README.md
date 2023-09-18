@@ -16,7 +16,7 @@ go get github.com/DragonsDenSoftware/goptional
 package main
 
 import (
-    "testing"
+	"testing"
     
 	"github.com/syke99/goptional"
 	"github.com/stretchr/testify/assert"
@@ -43,3 +43,9 @@ func main() {
     assert.Equal(t, "hello", tt.greeting) // asserts true
 }
 ```
+
+Who?
+====
+
+This library was developed by Quinn Millican ([@syke99](https://github.com/syke99))
+
