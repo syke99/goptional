@@ -2,7 +2,6 @@ package goptional
 
 import (
 	"encoding/json"
-	"reflect"
 )
 
 type Goptional[T any] interface {
@@ -20,18 +19,9 @@ type goption[T any] struct {
 	present bool
 }
 
-// NewGoptional takes a pointer to the variable
-// you want to make Optional and returns it as
-// a Goptional[T]
+// NewGoptional takes the variable you want to
+// make optional and returns it as a Goptional[T]
 func NewGoptional[T any](opt T) Goptional[T] {
-	if reflect.TypeOf(opt).Kind() != reflect.Pointer {
-		return nil
-	}
-
-	if reflect.ValueOf(opt).IsNil() {
-		return nil
-	}
-
 	return &goption[T]{
 		ptr:     &opt,
 		present: true,
