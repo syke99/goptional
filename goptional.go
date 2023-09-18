@@ -19,9 +19,17 @@ type goption[T any] struct {
 	present bool
 }
 
-// NewGoptional takes the variable you want to
+// NewGoptional takes a pointer to the variable you want to
 // make optional and returns it as a Goptional[T]
-func NewGoptional[T any](opt T) Goptional[T] {
+func NewGoptional[T comparable](opt T) Goptional[T] {
+	var isNil T
+	if opt == isNil {
+		return &goption[T]{
+			ptr:     nil,
+			present: false,
+		}
+	}
+
 	return &goption[T]{
 		ptr:     &opt,
 		present: true,
