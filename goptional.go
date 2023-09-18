@@ -7,7 +7,10 @@ import (
 
 type Goptional[T any] interface {
 	Exists(fn func(T)) Goptional[T]
+	ExistsElse(fn func(T), el func() T) Goptional[T]
 	Val() T
+	ValOr(or T) T
+	ValElse(fn func() T) T
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
 }
@@ -35,8 +38,8 @@ func NewGoptional[T any](opt T) Goptional[T] {
 	}
 }
 
-// Exists handles a nil check on your Goptional
-// variable and if it isn't nil, passes the underlying
+// Exists handles a nil check on the underlying variable
+// of your Goptional and if it isn't nil, passes the underlying
 // value to fn
 func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
 	if g.present {
@@ -45,13 +48,52 @@ func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
 	return g
 }
 
+// ExistsElse handles a nil check on the underlying variable
+// of your Goptional and if it isn't nil, passes the underlying
+// variable to fn. If it is nil, it calls el, sets the underlying
+// variable to the result, then passes that same underlying value
+// to fn
+func (g *goption[T]) ExistsElse(fn func(T), el func() T) Goptional[T] {
+	if g.present {
+		fn(*g.ptr)
+	} else {
+		t := el()
+		g.ptr = &t
+		fn(*g.ptr)
+	}
+	return g
+}
+
 // Val returns the underlying variable if it exists,
 // or nil if it doesn't
 func (g *goption[T]) Val() T {
+	var t T
 	if g.present {
 		return *g.ptr
 	}
-	return *(*T)(nil)
+	return t
+}
+
+// ValOr returns the underlying variable if it exists,
+// or or if it does not
+func (g *goption[T]) ValOr(or T) T {
+	if g.present {
+		return *g.ptr
+	}
+	return or
+}
+
+// ValElse returns the underlying variable if it exists,
+// or calls fn and sets the result as the new underlying
+// variable and returns it
+func (g *goption[T]) ValElse(fn func() T) T {
+	if g.present {
+		return *g.ptr
+	} else {
+		t := fn()
+		g.ptr = &t
+	}
+	return *g.ptr
 }
 
 // MarshalJSON allows Goptionals to safely implement
