@@ -11,29 +11,54 @@ type Goptional[T any] interface {
 	ValOr(or T) T
 	ValElse(fn func() T) T
 	MarshalJSON() ([]byte, error)
-	UnmarshalJSON([]byte) error
+	//UnmarshalJSON([]byte) error
+	unwrapVal() T
+	isWrapped() bool
 }
 
 type goption[T any] struct {
-	ptr     *T
+	ptr     *any
 	present bool
+	wrapped bool
 }
 
 // NewGoptional takes a pointer to the variable you want to
 // make optional and returns it as a Goptional[T]
 func NewGoptional[T comparable](opt T) Goptional[T] {
+	gop := &goption[T]{}
+
+	v := any(opt)
+
 	var isNil T
 	if opt == isNil {
-		return &goption[T]{
-			ptr:     nil,
-			present: false,
-		}
+		gop.ptr = &v
+		gop.present = false
+		return gop
 	}
 
-	return &goption[T]{
-		ptr:     &opt,
-		present: true,
+	gop.ptr = &v
+	gop.present = true
+
+	return gop
+}
+
+func Wrap[T comparable](g Goptional[T]) Goptional[T] {
+	var n T
+	if g.Val() == n {
+		return g
 	}
+
+	v := any(g)
+
+	return &goption[T]{
+		ptr:     &v,
+		present: true,
+		wrapped: true,
+	}
+}
+
+func Unwrap[T comparable](g Goptional[T]) T {
+	return g.unwrapVal()
 }
 
 // Exists handles a nil check on the underlying variable
@@ -41,7 +66,8 @@ func NewGoptional[T comparable](opt T) Goptional[T] {
 // value to fn
 func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
 	if g.present {
-		fn(*g.ptr)
+		v := *g.ptr
+		fn(v.(T))
 	}
 	return g
 }
@@ -53,12 +79,14 @@ func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
 // to fn
 func (g *goption[T]) ExistsElse(fn func(T), el func() T) Goptional[T] {
 	if g.present {
-		fn(*g.ptr)
+		v := *g.ptr
+		fn(v.(T))
 	} else {
-		t := el()
+		t := any(el())
 		g.ptr = &t
 		g.present = true
-		fn(*g.ptr)
+		v := *g.ptr
+		fn(v.(T))
 	}
 	return g
 }
@@ -68,16 +96,42 @@ func (g *goption[T]) ExistsElse(fn func(T), el func() T) Goptional[T] {
 func (g *goption[T]) Val() T {
 	var t T
 	if g.present {
-		return *g.ptr
+		v := *g.ptr
+		if g.isWrapped() {
+			x := v.(*goption[T])
+			unwrapped := *x.ptr
+			return unwrapped.(T)
+		}
+		return v.(T)
 	}
 	return t
+}
+
+func (g *goption[T]) isWrapped() bool {
+	return g.wrapped
+}
+
+func (g *goption[T]) unwrapVal() T {
+	var val T
+	if g.isWrapped() {
+		v := *g.ptr
+		x := v.(*goption[T])
+		return x.unwrapVal()
+	}
+
+	if g.present {
+		v := *g.ptr
+		return v.(T)
+	}
+	return val
 }
 
 // ValOr returns the underlying variable if it exists,
 // or or if it does not
 func (g *goption[T]) ValOr(or T) T {
 	if g.present {
-		return *g.ptr
+		v := *g.ptr
+		return v.(T)
 	}
 	return or
 }
@@ -87,13 +141,15 @@ func (g *goption[T]) ValOr(or T) T {
 // variable and returns it
 func (g *goption[T]) ValElse(fn func() T) T {
 	if g.present {
-		return *g.ptr
+		v := *g.ptr
+		return v.(T)
 	} else {
-		t := fn()
+		t := any(fn())
 		g.ptr = &t
 		g.present = true
 	}
-	return *g.ptr
+	v := *g.ptr
+	return v.(T)
 }
 
 // MarshalJSON allows Goptionals to safely implement
@@ -107,13 +163,19 @@ func (g *goption[T]) MarshalJSON() ([]byte, error) {
 	return nil, nil
 }
 
-// UnmarshalJSON allows Goptionals to safely implement
-// the json.Unmarshaler interface. This allows fields
-// in a struct that will be de/serialized to/from
-// JSON to be of type Goptional
-func (g *goption[T]) UnmarshalJSON(data []byte) error {
-	if g.present {
-		return json.Unmarshal(data, g.ptr)
-	}
-	return nil
-}
+//
+//// UnmarshalJSON allows Goptionals to safely implement
+//// the json.Unmarshaler interface. This allows fields
+//// in a struct that will be de/serialized to/from
+//// JSON to be of type Goptional
+//func (g *goption[T]) UnmarshalJSON(data []byte) error {
+//	if g.isWrapped() {
+//		v := g.unwrapVal()
+//		return v.UnmarshalJSON(data)
+//	}
+//
+//	if g.present {
+//		return json.Unmarshal(data, g.ptr)
+//	}
+//	return nil
+//}

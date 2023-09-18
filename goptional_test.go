@@ -144,31 +144,81 @@ func TestMarshalJSONDoesntExist(t *testing.T) {
 	assert.Nil(t, jsonBytes)
 }
 
-func TestUnmarshalJSON(t *testing.T) {
+//
+//func TestUnmarshalJSON(t *testing.T) {
+//	// Arrange
+//	tt := testType{}
+//
+//	opt := NewGoptional(&tt)
+//
+//	jsonString := "{\"greeting\":\"hello\"}"
+//
+//	// Act
+//	err := opt.UnmarshalJSON([]byte(jsonString))
+//
+//	// Assert
+//	assert.NoError(t, err)
+//	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+//}
+//
+//func TestUnmarshalJSONDoesntExist(t *testing.T) {
+//	// Arrange
+//	opt := NewGoptional[*testType](nil)
+//
+//	jsonString := "{\"greeting\":\"hello\"}"
+//
+//	// Act
+//	err := opt.UnmarshalJSON([]byte(jsonString))
+//
+//	// Assert
+//	assert.NoError(t, err)
+//}
+
+func TestWrap(t *testing.T) {
 	// Arrange
 	tt := testType{}
 
 	opt := NewGoptional(&tt)
 
-	jsonString := "{\"greeting\":\"hello\"}"
-
 	// Act
-	err := opt.UnmarshalJSON([]byte(jsonString))
+	opt2 := Wrap(opt)
 
 	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+	assert.Equal(t, true, opt2.isWrapped())
 }
 
-func TestUnmarshalJSONDoesntExist(t *testing.T) {
+func TestUnwrap(t *testing.T) {
 	// Arrange
-	opt := NewGoptional[*testType](nil)
+	tt := testType{}
 
-	jsonString := "{\"greeting\":\"hello\"}"
+	opt := NewGoptional(&tt)
+
+	opt.Exists(transform)
+
+	opt2 := Wrap(opt)
 
 	// Act
-	err := opt.UnmarshalJSON([]byte(jsonString))
+	innerOpt := Unwrap(opt2)
 
 	// Assert
-	assert.NoError(t, err)
+	assert.Equal(t, "hello", innerOpt.Greeting)
+}
+
+func TestDeeplyWrappedUnwrap(t *testing.T) {
+	// Arrange
+	tt := testType{}
+
+	opt := NewGoptional(&tt)
+
+	opt.Exists(transform)
+
+	opt2 := Wrap(opt)
+
+	opt3 := Wrap(opt2)
+
+	// Act
+	innerOpt := Unwrap(opt3)
+
+	// Assert
+	assert.Equal(t, "hello", innerOpt.Greeting)
 }
