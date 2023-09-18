@@ -18,7 +18,7 @@ package main
 import (
     "testing"
     
-	"github.com/DragonsDenSoftware/goptional"
+	"github.com/syke99/goptional"
 	"github.com/stretchr/testify/assert"
 )
 

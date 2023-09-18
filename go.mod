@@ -1,4 +1,4 @@
-module github.com/DragonsDenSoftware/goptional
+module github.com/syke99/goptional
 
 go 1.20
 
