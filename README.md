@@ -20,6 +20,7 @@ go get github.com/DragonsDenSoftware/goptional
 package main
 
 import (
+	"fmt"
 	"testing"
     
 	"github.com/syke99/goptional"
@@ -28,6 +29,10 @@ import (
 
 func transform(val *testType) {
 	val.greeting = "hello"
+}
+
+func printGreeting(val *testType) {
+	fmt.Println(val.greeting)
 }
 
 type testType struct {
@@ -45,6 +50,9 @@ func main() {
     
     // Assert
     assert.Equal(t, "hello", tt.greeting) // asserts true
+
+    // Act
+    opt.Exists(printGreeting) // prints "hello"
 }
 ```
 
