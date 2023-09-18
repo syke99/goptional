@@ -41,7 +41,7 @@ func main() {
     opt := NewGoptional(&tt)
     
     // Act
-    opt.Exists(transform)
+    opt.Map(transform)
     
     // Assert
     assert.Equal(t, "hello", tt.greeting) // asserts true
