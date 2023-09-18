@@ -13,7 +13,8 @@ type Goptional[T any] interface {
 }
 
 type goption[T any] struct {
-	ptr *T
+	ptr     *T
+	present bool
 }
 
 // NewGoptional takes a pointer to the variable
@@ -29,7 +30,8 @@ func NewGoptional[T any](opt T) Goptional[T] {
 	}
 
 	return &goption[T]{
-		ptr: &opt,
+		ptr:     &opt,
+		present: true,
 	}
 }
 
@@ -37,7 +39,7 @@ func NewGoptional[T any](opt T) Goptional[T] {
 // variable and if it isn't nil, passes the underlying
 // value to fn
 func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
-	if !isNil(g.ptr) {
+	if g.present {
 		fn(*g.ptr)
 	}
 	return g
@@ -46,14 +48,10 @@ func (g *goption[T]) Exists(fn func(T)) Goptional[T] {
 // Val returns the underlying variable if it exists,
 // or nil if it doesn't
 func (g *goption[T]) Val() T {
-	if !isNil(g.ptr) {
+	if g.present {
 		return *g.ptr
 	}
 	return *(*T)(nil)
-}
-
-func isNil[T any](v T) bool {
-	return reflect.ValueOf(v).IsNil()
 }
 
 // MarshalJSON allows Goptionals to safely implement
@@ -61,7 +59,7 @@ func isNil[T any](v T) bool {
 // in a struct that will be de/serialized to/from
 // JSON to be of type Goptional
 func (g *goption[T]) MarshalJSON() ([]byte, error) {
-	if !isNil(g.ptr) {
+	if g.present {
 		return json.Marshal(*g.ptr)
 	}
 	return nil, nil
@@ -72,7 +70,7 @@ func (g *goption[T]) MarshalJSON() ([]byte, error) {
 // in a struct that will be de/serialized to/from
 // JSON to be of type Goptional
 func (g *goption[T]) UnmarshalJSON(data []byte) error {
-	if !isNil(g.ptr) {
+	if g.present {
 		return json.Unmarshal(data, g.ptr)
 	}
 	return nil
