@@ -1,4 +1,8 @@
 # goptional
+[![Go Reference](https://pkg.go.dev/badge/github.com/syke99/goptional.svg)](https://pkg.go.dev/github.com/syke99/goptional)
+[![go reportcard](https://goreportcard.com/badge/github.com/syke99/goptional)](https://goreportcard.com/report/github.com/syke99/goptional)
+[![License](https://img.shields.io/github/license/syke99/goptional)](https://github.com/syke99/goptional/blob/master/LICENSE)
+![Go version](https://img.shields.io/github/go-mod/go-version/syke99/goptional)</br>
 an Option package for Go
 
 How do I use goptional?
