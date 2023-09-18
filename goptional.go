@@ -59,6 +59,7 @@ func (g *goption[T]) ExistsElse(fn func(T), el func() T) Goptional[T] {
 	} else {
 		t := el()
 		g.ptr = &t
+		g.present = true
 		fn(*g.ptr)
 	}
 	return g
@@ -92,6 +93,7 @@ func (g *goption[T]) ValElse(fn func() T) T {
 	} else {
 		t := fn()
 		g.ptr = &t
+		g.present = true
 	}
 	return *g.ptr
 }
