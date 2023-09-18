@@ -16,10 +16,10 @@ go get github.com/DragonsDenSoftware/goptional
 package main
 
 import (
-    "testing"
+	 "testing"
     
-	"github.com/DragonsDenSoftware/goptional"
-	"github.com/stretchr/testify/assert"
+		"github.com/DragonsDenSoftware/goptional"
+		"github.com/stretchr/testify/assert"
 )
 
 func transform(val *testType) {
@@ -43,3 +43,9 @@ func main() {
     assert.Equal(t, "hello", tt.greeting) // asserts true
 }
 ```
+
+Who?
+====
+
+This library was developed by Quinn Millican ([@syke99](https://github.com/syke99))
+
