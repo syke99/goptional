@@ -7,7 +7,9 @@ import (
 type Goptional[T any] interface {
 	Exists(fn func(T) error) error
 	Map(fn func(T)) Goptional[T]
+	FlatMap(fn func(T)) Goptional[T]
 	MapElse(fn func(T), el func() T) Goptional[T]
+	FlatMapElse(fn func(T), el func() T) Goptional[T]
 	Val() T
 	ValOr(or T) T
 	ValElse(fn func() T) T
@@ -83,6 +85,24 @@ func (g *goption[T]) Map(fn func(T)) Goptional[T] {
 	return g
 }
 
+// FlatMap is like Map, but flattens the Goptional is has
+// been called on if it has been wrapped
+func (g *goption[T]) FlatMap(fn func(T)) Goptional[T] {
+	var v T
+
+	if g.wrapped {
+		v = g.unwrapVal()
+	} else if g.present {
+		v = *g.ptr
+	}
+
+	if v != nil {
+		fn(v)
+	}
+
+	return g
+}
+
 // MapElse handles a nil check on the underlying variable
 // of your Goptional and if it isn't nil, passes the underlying
 // variable to fn. If it is nil, it calls el, sets the underlying
@@ -102,13 +122,36 @@ func (g *goption[T]) MapElse(fn func(T), el func() T) Goptional[T] {
 	return g
 }
 
+// FlatMapElse is like MapElse, but flattens the Goptional is has
+// been called on if it has been wrapped
+func (g *goption[T]) FlatMapElse(fn func(T), el func() T) Goptional[T] {
+	var v T
+
+	if g.wrapped {
+		v = g.unwrapVal()
+	} else if g.present {
+		v = *g.ptr
+	} else {
+		t := any(el())
+		g.ptr = &t
+		g.present = true
+		v = *g.ptr
+	}
+
+	if v != nil {
+		fn(v)
+	}
+
+	return g
+}
+
 // Val returns the underlying variable if it exists,
 // or nil if it doesn't
 func (g *goption[T]) Val() T {
 	var t T
 	if g.present {
 		v := *g.ptr
-		if g.isWrapped() {
+		if g.wrapped {
 			x := v.(*goption[T])
 			unwrapped := *x.ptr
 			return unwrapped.(T)
@@ -118,13 +161,9 @@ func (g *goption[T]) Val() T {
 	return t
 }
 
-func (g *goption[T]) isWrapped() bool {
-	return g.wrapped
-}
-
 func (g *goption[T]) unwrapVal() T {
 	var val T
-	if g.isWrapped() {
+	if g.wrapped {
 		v := *g.ptr
 		x := v.(*goption[T])
 		return x.unwrapVal()
@@ -135,6 +174,10 @@ func (g *goption[T]) unwrapVal() T {
 		return v.(T)
 	}
 	return val
+}
+
+func (g *goption[T]) isWrapped() bool {
+	return g.wrapped
 }
 
 // ValOr returns the underlying variable if it exists,
@@ -170,7 +213,7 @@ func (g *goption[T]) ValElse(fn func() T) T {
 // has been wrapped, you must Unwrap it first, before
 // Marshaling
 func (g *goption[T]) MarshalJSON() ([]byte, error) {
-	if g.isWrapped() {
+	if g.wrapped {
 		v := g.unwrapVal()
 		return json.Marshal(v)
 	}
@@ -188,7 +231,7 @@ func (g *goption[T]) MarshalJSON() ([]byte, error) {
 // has been wrapped, you must Unwrap it first, before
 // Unmarshalling
 func (g *goption[T]) UnmarshalJSON(data []byte) error {
-	if g.isWrapped() {
+	if g.wrapped {
 		v := g.unwrapVal()
 		return json.Unmarshal(data, v)
 	}
