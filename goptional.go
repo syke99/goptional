@@ -1,6 +1,8 @@
 package goptional
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Goptional[T any] interface {
 	Exists(fn func(*T) error) error
@@ -9,8 +11,8 @@ type Goptional[T any] interface {
 	FlatMap(fn func(*T)) Goptional[T]
 	MapElse(fn func(*T), el func() *T) Goptional[T]
 	FlatMapElse(fn func(*T), el func() T) Goptional[T]
-	Val() any
-	ValOr(or T) any
+	Val() T
+	ValOr(or T) T
 	ValElse(fn func() T) any
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON([]byte) error
@@ -43,7 +45,7 @@ func NewGoptional[T any](opt *T) Goptional[T] {
 }
 
 func Wrap[T any](g Goptional[T]) Goptional[T] {
-	if g.Val() == nil {
+	if g.unwrapVal() == nil {
 		return g
 	}
 
@@ -54,8 +56,8 @@ func Wrap[T any](g Goptional[T]) Goptional[T] {
 	}
 }
 
-func Unwrap[T any](g Goptional[T]) *T {
-	return g.unwrapVal()
+func Unwrap[T any](g Goptional[T]) T {
+	return *g.unwrapVal()
 }
 
 // Exists checks if the underlying value stored in your Goptional
@@ -145,11 +147,12 @@ func (g *goption[T]) FlatMapElse(fn func(*T), el func() T) Goptional[T] {
 
 // Val returns a pointer to the underlying variable if it exists,
 // or nil if it doesn't
-func (g *goption[T]) Val() any {
+func (g *goption[T]) Val() T {
 	if g.present && g.ptr != nil {
-		return g.ptr
+		return *g.ptr.(*T)
 	}
-	return nil
+	var v T
+	return v
 }
 
 func (g *goption[T]) unwrapVal() *T {
@@ -171,9 +174,9 @@ func (g *goption[T]) isWrapped() bool {
 
 // ValOr returns the underlying variable if it exists,
 // or or if it does not
-func (g *goption[T]) ValOr(or T) any {
+func (g *goption[T]) ValOr(or T) T {
 	if g.present && g.ptr != nil {
-		return g.ptr.(*T)
+		return *g.ptr.(*T)
 	}
 	return or
 }

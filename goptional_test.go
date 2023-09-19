@@ -90,7 +90,25 @@ func TestMapElseDoesntExists(t *testing.T) {
 	})
 
 	// Assert
-	assert.Equal(t, "hi all", opt.Val().(*testType).Greeting)
+	assert.Equal(t, "hi all", any(opt.Val()).(testType).Greeting)
+}
+
+func TestMapElseDoesntExistString(t *testing.T) {
+	// Arrange
+	greeting := ""
+
+	opt := NewGoptional(&greeting)
+
+	opt.ExistsNil()
+
+	opt.MapElse(func(s *string) {
+		if *s == "hi" {
+			*s = "hello"
+		}
+	}, func() *string {
+		greet := "hi"
+		return &greet
+	})
 }
 
 func TestExistsNil(t *testing.T) {
@@ -103,7 +121,7 @@ func TestExistsNil(t *testing.T) {
 	opt.ExistsNil()
 
 	// Assert
-	assert.Nil(t, opt.Val())
+	assert.Nil(t, opt.unwrapVal())
 }
 
 func TestMapElseDoesntExistAfterNil(t *testing.T) {
@@ -120,7 +138,7 @@ func TestMapElseDoesntExistAfterNil(t *testing.T) {
 	})
 
 	// Assert
-	assert.Equal(t, "hi all", any(Unwrap(opt)).(*testType).Greeting)
+	assert.Equal(t, "hi all", any(Unwrap(opt)).(testType).Greeting)
 }
 
 func TestExistsDoesExist(t *testing.T) {
@@ -178,27 +196,26 @@ func TestValOr(t *testing.T) {
 	// Arrange
 	tt := testType{Greeting: "hello"}
 
-	opt := NewGoptional[*testType](nil)
+	opt := NewGoptional[testType](nil)
 
 	// Act
-	v := opt.ValOr(&tt)
+	v := opt.ValOr(tt)
 
 	// Assert
-	assert.Equal(t, v.(*testType), &tt)
-	assert.Equal(t, "hello", v.(*testType).Greeting)
+	assert.Equal(t, "hello", any(v).(testType).Greeting)
 }
 
 func TestValElse(t *testing.T) {
 	// Arrange
-	opt := NewGoptional[*testType](nil)
+	opt := NewGoptional[testType](nil)
 
 	// Act
-	v := opt.ValElse(func() *testType {
-		return &testType{Greeting: "hello"}
+	v := opt.ValElse(func() testType {
+		return testType{Greeting: "hello"}
 	})
 
 	// Assert
-	assert.Equal(t, "hello", v.(*testType).Greeting)
+	assert.Equal(t, "hello", v.(testType).Greeting)
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -242,7 +259,7 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, "hello", opt.Val().(*testType).Greeting)
+	assert.Equal(t, "hello", any(opt.Val()).(testType).Greeting)
 }
 
 func TestUnmarshalJSONDoesntExist(t *testing.T) {
