@@ -11,7 +11,7 @@ How do I use goptional?
 ### Installation
 
 ```
-go get github.com/DragonsDenSoftware/goptional
+go get github.com/syke99/goptional
 ```
 
 ### Basic Usage
