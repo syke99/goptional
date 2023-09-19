@@ -21,12 +21,22 @@ func checkFailure(val *testType) error {
 	return nil
 }
 
+//func changeGreeting(greeting *string) {
+//	changed := "good morning star shine"
+//	greeting = &changed
+//}
+//
+//func newGreeting() string {
+//	changedGreeting := "hello"
+//	return changedGreeting
+//}
+
 type testType struct {
 	Greeting string `json:"greeting"`
 	fail     bool
 }
 
-func TestNewGoptionalPointer(t *testing.T) {
+func TestNewGoptional(t *testing.T) {
 	// Arrange
 	tt := testType{}
 
@@ -35,6 +45,21 @@ func TestNewGoptionalPointer(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, opt)
+}
+
+func TestWrapUnwrap(t *testing.T) {
+	// Arrange
+	tt := testType{Greeting: "hello"}
+
+	opt := NewGoptional(&tt)
+
+	// Act
+	opt = Wrap(opt)
+
+	ptr := Unwrap(opt)
+
+	// Assert
+	assert.Equal(t, "hello", ptr.Greeting)
 }
 
 func TestMap(t *testing.T) {
@@ -57,8 +82,8 @@ func TestMapElseExists(t *testing.T) {
 	opt := NewGoptional(&tt)
 
 	// Act
-	opt.MapElse(transform, func() *testType {
-		return &testType{}
+	opt.MapElse(transform, func() testType {
+		return testType{}
 	})
 
 	// Assert
@@ -67,16 +92,44 @@ func TestMapElseExists(t *testing.T) {
 
 func TestMapElseDoesntExists(t *testing.T) {
 	// Arrange
-	opt := NewGoptional[*testType](nil)
+	opt := NewGoptional[testType](nil)
 
 	// Act
-	opt.MapElse(transform, func() *testType {
-		return &testType{}
+	opt.MapElse(transform, func() testType {
+		return testType{}
 	})
 
 	// Assert
 	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
 }
+
+func TestExistsNil(t *testing.T) {
+	// Arrange
+	greeting := ""
+
+	opt := NewGoptional(&greeting)
+
+	// Act
+	opt.ExistsNil()
+
+	// Assert
+	assert.Nil(t, opt.Val())
+}
+
+//func TestMapElseDoesntExistAfterNil(t *testing.T) {
+//	// Arrange
+//	greeting := ""
+//
+//	opt := NewGoptional(&greeting)
+//
+//	// Act
+//	opt.ExistsNil()
+//
+//	opt.MapElse(changeGreeting, newGreeting)
+//
+//	// Assert
+//	assert.Equal(t, "good morning star shine", any(Unwrap(opt)).(*string))
+//}
 
 func TestExistsDoesExist(t *testing.T) {
 	// Arrange
@@ -139,8 +192,8 @@ func TestValOr(t *testing.T) {
 	v := opt.ValOr(&tt)
 
 	// Assert
-	assert.Equal(t, any(v).(*testType), &tt)
-	assert.Equal(t, "hello", any(v).(*testType).Greeting)
+	assert.Equal(t, v.(*testType), &tt)
+	assert.Equal(t, "hello", v.(*testType).Greeting)
 }
 
 func TestValElse(t *testing.T) {
@@ -153,7 +206,7 @@ func TestValElse(t *testing.T) {
 	})
 
 	// Assert
-	assert.Equal(t, "hello", any(v).(*testType).Greeting)
+	assert.Equal(t, "hello", v.(*testType).Greeting)
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -277,5 +330,5 @@ func TestUnmarshalJSONUnwrap(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+	assert.Equal(t, "hello", tt.Greeting)
 }
