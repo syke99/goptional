@@ -7,7 +7,7 @@ type Goptional[T any] interface {
 	ExistsNil() Goptional[T]
 	Map(fn func(*T)) Goptional[T]
 	FlatMap(fn func(*T)) Goptional[T]
-	MapElse(fn func(*T), el func() T) Goptional[T]
+	MapElse(fn func(*T), el func() *T) Goptional[T]
 	FlatMapElse(fn func(*T), el func() T) Goptional[T]
 	Val() any
 	ValOr(or T) any
@@ -110,13 +110,13 @@ func (g *goption[T]) FlatMap(fn func(*T)) Goptional[T] {
 // variable to the result, then passes that same underlying value
 // to fn
 
-func (g *goption[T]) MapElse(fn func(*T), el func() T) Goptional[T] {
+func (g *goption[T]) MapElse(fn func(*T), el func() *T) Goptional[T] {
 	if g.present && g.ptr != nil {
 		fn(g.ptr.(*T))
 	} else {
 		v := el()
-		fn(&v)
-		g.ptr = &v
+		fn(v)
+		g.ptr = v
 		g.present = true
 	}
 	return g

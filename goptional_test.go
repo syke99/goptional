@@ -7,7 +7,7 @@ import (
 )
 
 func transform(val *testType) {
-	val.Greeting = "hello"
+	val.Greeting = "hi all"
 }
 
 func fail(val *testType) {
@@ -20,16 +20,6 @@ func checkFailure(val *testType) error {
 	}
 	return nil
 }
-
-//func changeGreeting(greeting *string) {
-//	changed := "good morning star shine"
-//	greeting = &changed
-//}
-//
-//func newGreeting() string {
-//	changedGreeting := "hello"
-//	return changedGreeting
-//}
 
 type testType struct {
 	Greeting string `json:"greeting"`
@@ -72,7 +62,7 @@ func TestMap(t *testing.T) {
 	opt.Map(transform)
 
 	// Assert
-	assert.Equal(t, "hello", tt.Greeting)
+	assert.Equal(t, "hi all", tt.Greeting)
 }
 
 func TestMapElseExists(t *testing.T) {
@@ -82,12 +72,12 @@ func TestMapElseExists(t *testing.T) {
 	opt := NewGoptional(&tt)
 
 	// Act
-	opt.MapElse(transform, func() testType {
-		return testType{}
+	opt.MapElse(transform, func() *testType {
+		return &testType{}
 	})
 
 	// Assert
-	assert.Equal(t, "hello", tt.Greeting)
+	assert.Equal(t, "hi all", tt.Greeting)
 }
 
 func TestMapElseDoesntExists(t *testing.T) {
@@ -95,12 +85,12 @@ func TestMapElseDoesntExists(t *testing.T) {
 	opt := NewGoptional[testType](nil)
 
 	// Act
-	opt.MapElse(transform, func() testType {
-		return testType{}
+	opt.MapElse(transform, func() *testType {
+		return &testType{}
 	})
 
 	// Assert
-	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+	assert.Equal(t, "hi all", opt.Val().(*testType).Greeting)
 }
 
 func TestExistsNil(t *testing.T) {
@@ -116,20 +106,22 @@ func TestExistsNil(t *testing.T) {
 	assert.Nil(t, opt.Val())
 }
 
-//func TestMapElseDoesntExistAfterNil(t *testing.T) {
-//	// Arrange
-//	greeting := ""
-//
-//	opt := NewGoptional(&greeting)
-//
-//	// Act
-//	opt.ExistsNil()
-//
-//	opt.MapElse(changeGreeting, newGreeting)
-//
-//	// Assert
-//	assert.Equal(t, "good morning star shine", any(Unwrap(opt)).(*string))
-//}
+func TestMapElseDoesntExistAfterNil(t *testing.T) {
+	// Arrange
+	tt := testType{Greeting: "hello"}
+
+	opt := NewGoptional(&tt)
+
+	// Act
+	opt.ExistsNil()
+
+	opt.MapElse(transform, func() *testType {
+		return &testType{}
+	})
+
+	// Assert
+	assert.Equal(t, "hi all", any(Unwrap(opt)).(*testType).Greeting)
+}
 
 func TestExistsDoesExist(t *testing.T) {
 	// Arrange
@@ -222,7 +214,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, "{\"greeting\":\"hello\"}", string(jsonBytes))
+	assert.Equal(t, "{\"greeting\":\"hi all\"}", string(jsonBytes))
 }
 
 func TestMarshalJSONDoesntExist(t *testing.T) {
@@ -250,7 +242,7 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, "hello", any(opt.Val()).(*testType).Greeting)
+	assert.Equal(t, "hello", opt.Val().(*testType).Greeting)
 }
 
 func TestUnmarshalJSONDoesntExist(t *testing.T) {
@@ -293,7 +285,7 @@ func TestUnwrap(t *testing.T) {
 	innerOpt := Unwrap(opt2)
 
 	// Assert
-	assert.Equal(t, "hello", innerOpt.Greeting)
+	assert.Equal(t, "hi all", innerOpt.Greeting)
 }
 
 func TestDeeplyWrappedUnwrap(t *testing.T) {
@@ -312,7 +304,7 @@ func TestDeeplyWrappedUnwrap(t *testing.T) {
 	innerOpt := Unwrap(opt3)
 
 	// Assert
-	assert.Equal(t, "hello", innerOpt.Greeting)
+	assert.Equal(t, "hi all", innerOpt.Greeting)
 }
 
 func TestUnmarshalJSONUnwrap(t *testing.T) {
